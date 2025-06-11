@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sana Mektubum Var  🎁</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+  body {
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(135deg, #fceabb, #f8b500);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Pacifico', cursive;
+    overflow: hidden;
+  }
+  #container {
+    text-align: center;
+    width: 320px;
+  }
+  #envelope {
+    font-size: 90px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.5s ease;
+  }
+  #envelope.open {
+    transform: translateY(-40px) rotate(-15deg);
+  }
+  #letter {
+    margin-top: 20px;
+    background: #fff7d1;
+    border-radius: 15px;
+    padding: 25px 20px;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.25);
+    font-size: 22px;
+    line-height: 1.6;
+    color: #b85400;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.6s ease, opacity 0.8s ease;
+  }
+  #letter.show {
+    opacity: 1;
+    max-height: 600px;
+  }
+  #letter p {
+    margin: 12px 0;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  #letter p.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  canvas#confetti {
+    position: fixed;
+    pointer-events: none;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+  }
+</style>
+</head>
+<body>
+
+<div id="container">
+  <div id="envelope" title="Tıkla ve mektubunu aç!">✉️</div>
+  <div id="letter">
+    <p>Güzelim,</p>
+    <p>Anladık lanet olsun romantiklik ama...</p>
+    <p>Canına da kurban olurum ben senin...</p>
+    <p>İnsan sevdiğini merak edermiş💖</p>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+  const envelope = document.getElementById('envelope');
+  const letter = document.getElementById('letter');
+  const paragraphs = letter.querySelectorAll('p');
+  const confettiCanvas = document.getElementById('confetti');
+  const ctx = confettiCanvas.getContext('2d');
+
+  let step = 0;
+  let confettiActive = false;
+
+  function resizeCanvas() {
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  envelope.addEventListener('click', () => {
+    if (step === 0) {
+      envelope.classList.add('open');
+      letter.classList.add('show');
+      revealParagraph(0);
+      step++;
+    } else if (step > 0 && step <= paragraphs.length) {
+      revealParagraph(step);
+      step++;
+      if (step === paragraphs.length + 1) {
+        startConfetti();
+      }
+    }
+  });
+
+  function revealParagraph(i) {
+    if (paragraphs[i]) {
+      paragraphs[i].classList.add('visible');
+    }
+  }
+
+  // Confetti logic adapted from simple canvas confetti example
+
+  let confettiPieces = [];
+  function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  class ConfettiPiece {
+    constructor() {
+      this.x = randomRange(0, confettiCanvas.width);
+      this.y = randomRange(-confettiCanvas.height, 0);
+      this.size = randomRange(7, 12);
+      this.color = `hsl(${randomRange(0, 360)}, 70%, 60%)`;
+      this.speedY = randomRange(1, 3);
+      this.speedX = randomRange(-1, 1);
+      this.angle = randomRange(0, 360);
+      this.angleSpeed = randomRange(0.05, 0.1);
+      this.tilt = 0;
+      this.tiltSpeed = randomRange(0.05, 0.1);
+    }
+    update() {
+      this.y += this.speedY;
+      this.x += this.speedX;
+      this.angle += this.angleSpeed;
+      this.tilt = Math.sin(this.angle) * 15;
+      if (this.y > confettiCanvas.height) {
+        this.y = randomRange(-20, 0);
+        this.x = randomRange(0, confettiCanvas.width);
+      }
+      if (this.x > confettiCanvas.width) this.x = 0;
+      if (this.x < 0) this.x = confettiCanvas.width;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.lineWidth = this.size / 2;
+      ctx.strokeStyle = this.color;
+      ctx.moveTo(this.x + this.tilt, this.y);
+      ctx.lineTo(this.x - this.tilt, this.y + this.size);
+      ctx.stroke();
+    }
+  }
+
+  function createConfetti() {
+    for (let i = 0; i < 150; i++) {
+      confettiPieces.push(new ConfettiPiece());
+    }
+  }
+
+  function drawConfetti() {
+    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    confettiPieces.forEach(piece => {
+      piece.update();
+      piece.draw();
+    });
+  }
+
+  function startConfetti() {
+    if(confettiActive) return;
+    confettiActive = true;
+    createConfetti();
+    let frames = 0;
+    function anim() {
+      if(frames < 400) { // yaklaşık 6-7 saniye confetti
+        drawConfetti();
+        frames++;
+        requestAnimationFrame(anim);
+      } else {
+        ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiPieces = [];
+        confettiActive = false;
+      }
+    }
+    anim();
+  }
+</script>
+
+</body>
+</html>
